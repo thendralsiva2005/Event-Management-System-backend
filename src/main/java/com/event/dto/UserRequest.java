@@ -1,5 +1,6 @@
 package com.event.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -10,7 +11,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class UserRequest {
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Integer userId;
 
     @NotBlank(message = "Name cannot be empty")
     private String name;

@@ -1,10 +1,13 @@
 package com.event.controller;
 
-import com.event.dto.User;
-import com.event.entity.UserEntity;
+import com.event.dto.Credentials;
+import com.event.dto.UserRequest;
 import com.event.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -16,56 +19,39 @@ public class UserController {
 
     private final UserService userService;
 
-
     @PostMapping
-    public String createUser(@RequestBody User user) {
+    public ResponseEntity<UserRequest> createUser(@Valid @RequestBody UserRequest userRequest) {
 
-        log.info("@Sh12 API request received: create user");
-
-        return userService.createUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userRequest));
     }
 
     @PostMapping("/login")
-    public String loginUser(@RequestParam String email,
-                            @RequestParam String password) {
+    public ResponseEntity<String> loginUser(@Valid @RequestBody Credentials credentials) {
 
-        log.info("@Sh12 API request received: login user");
-
-        return userService.loginUser(email, password);
+        return ResponseEntity.ok(userService.loginUser(credentials));
     }
-
 
     @GetMapping("/{id}")
-    public UserEntity getUserById(@PathVariable Integer id) {
+    public ResponseEntity<UserRequest> getUserById(@PathVariable Integer id) {
 
-        log.info("@Sh12 API request received: get user by id {}", id);
-
-        return userService.getUserById(id);
+        return ResponseEntity.ok(userService.getUserById(id));
     }
 
-
     @GetMapping
-    public List<UserEntity> getAllUsers() {
-
-        log.info("@Sh12 API request received: get all users");
+    public List<UserRequest> getAllUsers() {
 
         return userService.getAllUsers();
     }
 
     @PutMapping("/{id}")
     public String updateUser(@PathVariable Integer id,
-                             @RequestBody User user) {
+            @Valid @RequestBody UserRequest userRequest) {
 
-        log.info("@Sh12 API request received: update user {}", id);
-
-        return userService.updateUser(id, user);
+        return userService.updateUser(id, userRequest);
     }
-
 
     @DeleteMapping("/{id}")
     public String deleteUser(@PathVariable Integer id) {
-
-        log.info("@Sh12 API request received: delete user {}", id);
 
         return userService.deleteUser(id);
     }

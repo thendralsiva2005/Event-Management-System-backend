@@ -1,12 +1,16 @@
 package com.event.service;
 
-import com.event.dto.User;
+import com.event.dto.Credentials;
+import com.event.dto.UserRequest;
 import com.event.entity.UserEntity;
-import com.event.expection.RecordNotFoundExpection;
+import com.event.expection.RecordNotFoundException;
+import com.event.mapper.UserMapper;
 import com.event.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -15,96 +19,69 @@ import java.util.List;
 public class UserService {
 
     private final UserRepo userRepo;
+    private final UserMapper userMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
 
+    public UserRequest createUser(UserRequest userRequest) {
 
-    public String createUser(User user) {
-
-        log.info("@Sh12 Creating user with email: {}", user.getEmail());
-
-        if (userRepo.existsByEmail(user.getEmail())) {
-            log.warn("@Sh12 User already exists with email: {}", user.getEmail());
+        if (userRepo.existsByEmail(userRequest.getEmail())) {
             throw new RuntimeException("User already exists with this email");
         }
 
-        UserEntity userEntity = new UserEntity();
-        userEntity.setName(user.getName());
-        userEntity.setEmail(user.getEmail());
-        userEntity.setPassword(user.getPassword());
+        UserEntity userEntity = userMapper.toEntity(userRequest);
 
+        userEntity.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         userRepo.save(userEntity);
 
-        log.info("@Sh12 User successfully created with id: {}", userEntity.getId());
-
-        return "User created successfully";
+        return userMapper.toDto(userEntity);
     }
 
+    public String loginUser(Credentials credentials) {
 
+        UserEntity user = userRepo.findByEmail(credentials.getEmail())
+                .orElseThrow(() -> new RecordNotFoundException("User not found"));
 
-    public String loginUser(String email, String password) {
-
-        log.info("@Sh12 Login attempt for email: {}", email);
-
-        UserEntity user = userRepo.findByEmail(email)
-                .orElseThrow(() -> new RecordNotFoundExpection("User not found"));
-
-        if (!user.getPassword().equals(password)) {
-            log.warn("@Sh12 Invalid password for email: {}", email);
+        if (!passwordEncoder.matches(credentials.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
-        log.info("@Sh12 User logged in successfully: {}", email);
-
-        return "Login successful";
+        return String.valueOf(user.getId());
     }
 
+    public UserRequest getUserById(Integer id) {
 
-    public UserEntity getUserById(Integer id) {
+        UserEntity userEntity = userRepo.findById(id)
+                .orElseThrow(() -> new RecordNotFoundException("User not found"));
 
-        log.info("@Sh12 Fetching user with id: {}", id);
-
-        return userRepo.findById(id)
-                .orElseThrow(() -> new RecordNotFoundExpection("User not found"));
+        return userMapper.toDto(userEntity);
     }
 
-    public List<UserEntity> getAllUsers() {
-
-        log.info("@Sh12 Fetching all users");
-
-        return userRepo.findAll();
+    public List<UserRequest> getAllUsers() {
+        return userMapper.toDtoList(userRepo.findAll());
     }
 
-
-    public String updateUser(Integer id, User user) {
-
-        log.info("@Sh12 Updating user with id: {}", id);
+    public String updateUser(Integer id, UserRequest userRequest) {
 
         UserEntity existingUser = userRepo.findById(id)
-                .orElseThrow(() -> new RecordNotFoundExpection("User not found"));
+                .orElseThrow(() -> new RecordNotFoundException("User not found"));
 
-        existingUser.setName(user.getName());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setPassword(user.getPassword());
+        existingUser.setName(userRequest.getName());
+        existingUser.setEmail(userRequest.getEmail());
+
+        existingUser.setPassword(passwordEncoder.encode(userRequest.getPassword()));
 
         userRepo.save(existingUser);
-
-        log.info("@Sh12 User updated successfully with id: {}", id);
 
         return "User updated successfully";
     }
 
-
     public String deleteUser(Integer id) {
 
-        log.info("@Sh12 Deleting user with id: {}", id);
-
         if (!userRepo.existsById(id)) {
-            log.warn("@Sh12 User not found with id: {}", id);
             throw new RuntimeException("User not found");
         }
 
         userRepo.deleteById(id);
-
-        log.info("@Sh12 User deleted successfully with id: {}", id);
 
         return "User deleted successfully";
     }

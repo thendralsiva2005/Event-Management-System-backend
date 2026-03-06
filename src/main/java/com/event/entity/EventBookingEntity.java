@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookingEntity {
+public class EventBookingEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,4 +26,9 @@ public class BookingEntity {
     @ManyToOne
     @JoinColumn(name = "event_id")
     private EventEntity event;
+
+    @PrePersist
+    protected void onCreate() {
+        this.bookingDate = LocalDate.now();
+    }
 }
